@@ -1,0 +1,12 @@
+# Terraform 비밀 파일
+terraform.tfvars
+
+# Terraform 상태 파일 (모든 실제 값 포함)
+*.tfstate
+*.tfstate.backup
+.terraform/
+.terraform.lock.hcl
+
+# OS 파일
+.DS_Store
+Thumbs.db
