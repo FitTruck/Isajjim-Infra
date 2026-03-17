@@ -42,6 +42,49 @@ resource "google_storage_bucket" "images" {
 }
 
 # ============================================
+# 서비스 계정 추가 
+# ============================================
+
+# 서비스 계정 생성
+resource "google_service_account" "backend" {
+  account_id   = "isajjim-backend-sa"
+  display_name = "Isajjim Backend Service Account"
+}
+
+# Cloud SQL 접근 권한
+resource "google_project_iam_member" "backend_sql" {
+  project = var.project_id
+  role    = "roles/cloudsql.client"
+  member  = "serviceAccount:${google_service_account.backend.email}"
+}
+
+# GCS 접근 권한
+resource "google_project_iam_member" "backend_storage" {
+  project = var.project_id
+  role    = "roles/storage.objectAdmin"
+  member  = "serviceAccount:${google_service_account.backend.email}"
+}
+
+# Cloud Build 서비스 계정 권한
+resource "google_project_iam_member" "cloudbuild_run" {
+  project = var.project_id
+  role    = "roles/run.admin"
+  member  = "serviceAccount:675009148577@cloudbuild.gserviceaccount.com"
+}
+
+resource "google_project_iam_member" "cloudbuild_sa" {
+  project = var.project_id
+  role    = "roles/iam.serviceAccountUser"
+  member  = "serviceAccount:675009148577@cloudbuild.gserviceaccount.com"
+}
+
+resource "google_project_iam_member" "cloudbuild_registry" {
+  project = var.project_id
+  role    = "roles/artifactregistry.writer"
+  member  = "serviceAccount:675009148577@cloudbuild.gserviceaccount.com"
+}
+
+# ============================================
 # Cloud Storage - 3D PLY 결과물 버킷
 # ============================================
 resource "google_storage_bucket" "assets" {
@@ -83,12 +126,6 @@ resource "google_sql_database_instance" "main" {
 
     ip_configuration {
       ipv4_enabled = true
-
-      # 모든 IP에서 접근 허용 (개발용, 운영에서는 제한 필요)
-      authorized_networks {
-        name  = "allow-all"
-        value = "0.0.0.0/0"
-      }
     }
 
     backup_configuration {
@@ -150,8 +187,17 @@ resource "google_cloud_run_v2_service" "backend" {
 
   template {
     scaling {
-      min_instance_count = 0     # 요청 없으면 0 (비용 절약)
-      max_instance_count = 5     # 최대 5개
+      min_instance_count = 0
+      max_instance_count = 5
+    }
+
+    service_account = google_service_account.backend.email
+
+    volumes {
+      name = "cloudsql"
+      cloud_sql_instance {
+        instances = [google_sql_database_instance.main.connection_name]
+      }
     }
 
     containers {
@@ -168,13 +214,18 @@ resource "google_cloud_run_v2_service" "backend" {
         }
       }
 
+      volume_mounts {
+        name       = "cloudsql"
+        mount_path = "/cloudsql"
+      }
+
       env {
         name  = "SPRING_PROFILES_ACTIVE"
         value = "dev"
       }
       env {
         name  = "DB_URL"
-        value = "jdbc:mysql://${google_sql_database_instance.main.public_ip_address}:3306/isajjim"
+        value = "jdbc:mysql:///${google_sql_database.isajjim.name}?cloudSqlInstance=${google_sql_database_instance.main.connection_name}&socketFactory=com.google.cloud.sql.mysql.SocketFactory&unixDomainSocket=/cloudsql/${google_sql_database_instance.main.connection_name}"
       }
       env {
         name  = "DB_USERNAME"
@@ -186,11 +237,11 @@ resource "google_cloud_run_v2_service" "backend" {
       }
       env {
         name  = "AI_BASE_URL"
-        value = "http://placeholder:8000"    # AI 서버 준비되면 교체
+        value = "http://placeholder:8000"
       }
       env {
         name  = "AI_USE_SERVER"
-        value = "false"    # AI 서버 아직 없으므로 비활성화
+        value = "false"
       }
       env {
         name  = "GEMINI_API_KEY"
@@ -218,7 +269,7 @@ resource "google_cloud_run_v2_service" "backend" {
       }
       env {
         name  = "DEV_SWAGGER_URL"
-        value = "http://localhost:8080"
+        value = "https://isajjim-backend-egwdefgu5q-du.a.run.app"
       }
     }
   }
@@ -228,6 +279,7 @@ resource "google_cloud_run_v2_service" "backend" {
     google_artifact_registry_repository.main
   ]
 }
+
 
 # Cloud Run을 외부에서 접근 가능하게 설정
 resource "google_cloud_run_v2_service_iam_member" "public" {
