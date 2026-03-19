@@ -1,9 +1,14 @@
 # Terraform 설정
 terraform {
+  required_version = ">= 1.5.0"
   required_providers {
     google = {
       source  = "hashicorp/google"
       version = "~> 5.0"
+    }
+    local = {
+      source  = "hashicorp/local"
+      version = "~> 2.0"
     }
   }
 }
@@ -15,47 +20,37 @@ provider "google" {
   zone    = var.zone
 }
 
+
 # ============================================
-# Cloud Storage - 이미지 업로드용 버킷
+# API 활성화
 # ============================================
-resource "google_storage_bucket" "images" {
-  name     = "${var.project_name}-images"
-  location = var.region
-
-  # 버전 관리 (실수로 삭제 방지)
-  versioning {
-    enabled = false
-  }
-
-  # 비용 절약: 90일 후 자동 삭제
-  lifecycle_rule {
-    condition {
-      age = 90
-    }
-    action {
-      type = "Delete"
-    }
-  }
-
-  # 균일한 접근 제어
-  uniform_bucket_level_access = true
+resource "google_project_service" "compute" {
+  service            = "compute.googleapis.com"
+  disable_on_destroy = false
 }
 
-# ============================================
-# 서비스 계정 추가 
-# ============================================
+resource "google_project_service" "sqladmin" {
+  service            = "sqladmin.googleapis.com"
+  disable_on_destroy = false
+}
 
-# 서비스 계정 생성
+resource "google_project_service" "artifactregistry" {
+  service            = "artifactregistry.googleapis.com"
+  disable_on_destroy = false
+}
+
+resource "google_project_service" "cloudbuild" {
+  service            = "cloudbuild.googleapis.com"
+  disable_on_destroy = false
+}
+
+
+# ============================================
+# 서비스 계정 
+# ============================================
 resource "google_service_account" "backend" {
   account_id   = "isajjim-backend-sa"
   display_name = "Isajjim Backend Service Account"
-}
-
-# Cloud SQL 접근 권한
-resource "google_project_iam_member" "backend_sql" {
-  project = var.project_id
-  role    = "roles/cloudsql.client"
-  member  = "serviceAccount:${google_service_account.backend.email}"
 }
 
 # GCS 접근 권한
@@ -65,7 +60,21 @@ resource "google_project_iam_member" "backend_storage" {
   member  = "serviceAccount:${google_service_account.backend.email}"
 }
 
-# Cloud Build 서비스 계정 권한
+# Cloud SQL 접근 권한
+resource "google_project_iam_member" "backend_sql" {
+  project = var.project_id
+  role    = "roles/cloudsql.client"
+  member  = "serviceAccount:${google_service_account.backend.email}"
+}
+
+# Artifact Registry 읽기 권한 
+resource "google_project_iam_member" "backend_registry" {
+  project = var.project_id
+  role    = "roles/artifactregistry.reader"
+  member  = "serviceAccount:${google_service_account.backend.email}"
+}
+
+# Cloud Build 권한
 resource "google_project_iam_member" "cloudbuild_run" {
   project = var.project_id
   role    = "roles/run.admin"
@@ -84,91 +93,181 @@ resource "google_project_iam_member" "cloudbuild_registry" {
   member  = "serviceAccount:675009148577@cloudbuild.gserviceaccount.com"
 }
 
+# Cloud Build가 VM에 SSH 접속하기 위한 권한
+resource "google_project_iam_member" "cloudbuild_compute" {
+  project = var.project_id
+  role    = "roles/compute.osLogin"
+  member  = "serviceAccount:675009148577@cloudbuild.gserviceaccount.com"
+}
+
+# 서비스 계정이 Signed URL 생성할 수 있도록 자기 자신에게 서명 권한 부여
+resource "google_service_account_iam_member" "backend_token_creator" {
+  service_account_id = google_service_account.backend.name
+  role               = "roles/iam.serviceAccountTokenCreator"
+  member             = "serviceAccount:${google_service_account.backend.email}"
+}
+
 # ============================================
-# Cloud Storage - 3D PLY 결과물 버킷
+# 방화벽 규칙 
 # ============================================
-resource "google_storage_bucket" "assets" {
-  name     = "${var.project_name}-3d-assets"
-  location = var.region
+resource "google_compute_firewall" "allow_ssh" {
+  name          = "isajjim-allow-ssh"
+  network       = "default"
+  source_ranges = ["0.0.0.0/0"]
+  target_tags   = ["isajjim-backend"]
+
+  allow {
+    protocol = "tcp"
+    ports    = ["22"]
+  }
+}
+
+resource "google_compute_firewall" "allow_http" {
+  name          = "isajjim-allow-http"
+  network       = "default"
+  source_ranges = ["0.0.0.0/0"]
+  target_tags   = ["isajjim-backend"]
+
+  allow {
+    protocol = "tcp"
+    ports    = ["80"]
+  }
+}
+
+resource "google_compute_firewall" "allow_https" {
+  name          = "isajjim-allow-https"
+  network       = "default"
+  source_ranges = ["0.0.0.0/0"]
+  target_tags   = ["isajjim-backend"]
+
+  allow {
+    protocol = "tcp"
+    ports    = ["443"]
+  }
+}
+
+# DNS 없이 IP:8080으로 직접 테스트할 때 사용 - 운영 안정화 후 제거 권장
+resource "google_compute_firewall" "allow_spring" {
+  name          = "isajjim-allow-spring"
+  network       = "default"
+  source_ranges = ["0.0.0.0/0"]
+  target_tags   = ["isajjim-backend"]
+
+  allow {
+    protocol = "tcp"
+    ports    = ["8080"]
+  }
+}
+
+
+# ============================================
+# 고정 외부 IP (AWS Elastic IP와 동일)
+# ============================================
+resource "google_compute_address" "backend_ip" {
+  name       = "isajjim-backend-ip"
+  region     = var.region
+  depends_on = [google_project_service.compute]
+}
+
+
+# ============================================
+# Cloud Storage - 이미지 업로드용 버킷
+# ============================================
+resource "google_storage_bucket" "images" {
+  name                        = "${var.project_name}-images"
+  location                    = var.region
+  uniform_bucket_level_access = true
 
   versioning {
     enabled = false
   }
 
   lifecycle_rule {
-    condition {
-      age = 90
-    }
-    action {
-      type = "Delete"
-    }
+    condition { age = 90 }
+    action { type = "Delete" }
   }
 
+  cors {
+    origin = [
+      "https://isajjim.kro.kr",
+      "https://isajjim.web.app",
+      "https://isajjim.firebaseapp.com"
+    ]
+    method          = ["GET", "PUT", "POST"]
+    response_header = ["Content-Type"]
+    max_age_seconds = 3600
+  }
+}
+
+
+# ============================================
+# Cloud Storage - 3D PLY 결과물 버킷
+# ============================================
+resource "google_storage_bucket" "assets" {
+  name                        = "${var.project_name}-3d-assets"
+  location                    = var.region
   uniform_bucket_level_access = true
+
+  versioning {
+    enabled = false
+  }
+
+  lifecycle_rule {
+    condition { age = 90 }
+    action { type = "Delete" }
+  }
 }
 
-# ============================================
-# Cloud SQL - MySQL 8.0
-# ============================================
 
-# Cloud SQL Admin API 활성화
-resource "google_project_service" "sqladmin" {
-  service = "sqladmin.googleapis.com"
-}
-
+# ============================================
+# Cloud SQL MySQL 8.0 
+# ============================================
 resource "google_sql_database_instance" "main" {
-  name             = "${var.project_id}-db"
-  database_version = "MYSQL_8_0"
-  region           = var.region
+  name                = "${var.project_id}-db"
+  database_version    = "MYSQL_8_0"
+  region              = var.region
+  deletion_protection = false
 
   settings {
-    tier = "db-f1-micro"    # 가장 저렴한 티어
+    tier = "db-f1-micro"
 
     ip_configuration {
       ipv4_enabled = true
+
+      # 백엔드 VM 고정 IP만 DB 접근 허용
+      authorized_networks {
+        name  = "backend-vm"
+        value = google_compute_address.backend_ip.address
+      }
     }
 
     backup_configuration {
-      enabled = false    # 크레딧 절약
+      enabled = false
+    }
+
+    maintenance_window {
+      hour = 19  # UTC 19:00 = KST 04:00
+      day  = 7
     }
   }
-
-  # Terraform destroy 시 DB 삭제 허용
-  deletion_protection = false
 
   depends_on = [google_project_service.sqladmin]
 }
 
-# 데이터베이스 생성
 resource "google_sql_database" "isajjim" {
   name     = "isajjim"
   instance = google_sql_database_instance.main.name
 }
 
-# DB 사용자 생성
 resource "google_sql_user" "app_user" {
   name     = "isajjim-user"
   instance = google_sql_database_instance.main.name
   password = var.db_password
 }
 
-# ============================================
-# 필요한 API 활성화
-# ============================================
-resource "google_project_service" "run" {
-  service = "run.googleapis.com"
-}
-
-resource "google_project_service" "artifactregistry" {
-  service = "artifactregistry.googleapis.com"
-}
-
-resource "google_project_service" "cloudbuild" {
-  service = "cloudbuild.googleapis.com"
-}
 
 # ============================================
-# Artifact Registry - Docker 이미지 저장소
+# Artifact Registry - Docker 이미지 저장소 
 # ============================================
 resource "google_artifact_registry_repository" "main" {
   location      = var.region
@@ -178,113 +277,66 @@ resource "google_artifact_registry_repository" "main" {
   depends_on = [google_project_service.artifactregistry]
 }
 
+
 # ============================================
-# Cloud Run - 백엔드
+# 백엔드 VM 
 # ============================================
-resource "google_cloud_run_v2_service" "backend" {
-  name     = "isajjim-backend"
-  location = var.region
+resource "google_compute_instance" "backend" {
+  name         = "isajjim-backend"
+  machine_type = "e2-medium"
+  zone = var.zone
 
-  template {
-    scaling {
-      min_instance_count = 0
-      max_instance_count = 5
-    }
+  depends_on = [
+    google_project_service.compute,
+    google_compute_address.backend_ip
+  ]
 
-    service_account = google_service_account.backend.email
-
-    volumes {
-      name = "cloudsql"
-      cloud_sql_instance {
-        instances = [google_sql_database_instance.main.connection_name]
-      }
-    }
-
-    containers {
-      image = "${var.region}-docker.pkg.dev/${var.project_id}/isajjim-repo/backend:latest"
-
-      ports {
-        container_port = 8080
-      }
-
-      resources {
-        limits = {
-          cpu    = "1"
-          memory = "512Mi"
-        }
-      }
-
-      volume_mounts {
-        name       = "cloudsql"
-        mount_path = "/cloudsql"
-      }
-
-      env {
-        name  = "SPRING_PROFILES_ACTIVE"
-        value = "dev"
-      }
-      env {
-        name  = "DB_URL"
-        value = "jdbc:mysql:///${google_sql_database.isajjim.name}?cloudSqlInstance=${google_sql_database_instance.main.connection_name}&socketFactory=com.google.cloud.sql.mysql.SocketFactory&unixDomainSocket=/cloudsql/${google_sql_database_instance.main.connection_name}"
-      }
-      env {
-        name  = "DB_USERNAME"
-        value = "isajjim-user"
-      }
-      env {
-        name  = "DB_PASSWORD"
-        value = var.db_password
-      }
-      env {
-        name  = "AI_BASE_URL"
-        value = "http://placeholder:8000"
-      }
-      env {
-        name  = "AI_USE_SERVER"
-        value = "false"
-      }
-      env {
-        name  = "GEMINI_API_KEY"
-        value = var.gemini_api_key
-      }
-      env {
-        name  = "GEMINI_MODEL"
-        value = "gemini-flash-latest"
-      }
-      env {
-        name  = "GOOGLE_PROJECT_ID"
-        value = var.project_id
-      }
-      env {
-        name  = "GOOGLE_GCS_BUCKET"
-        value = google_storage_bucket.images.name
-      }
-      env {
-        name  = "FRONTEND_URL"
-        value = "https://isajjim.kro.kr"
-      }
-      env {
-        name  = "ESTIMATE_EXTRA_VOLUME_RATIO"
-        value = "1.1"
-      }
-      env {
-        name  = "DEV_SWAGGER_URL"
-        value = "https://isajjim-backend-egwdefgu5q-du.a.run.app"
-      }
+  boot_disk {
+    initialize_params {
+      image = "ubuntu-os-cloud/ubuntu-2204-lts"
+      size  = 20
+      type  = "pd-balanced"
     }
   }
 
-  depends_on = [
-    google_project_service.run,
-    google_artifact_registry_repository.main
-  ]
-}
+  network_interface {
+    network = "default"
+    access_config {
+      nat_ip = google_compute_address.backend_ip.address
+    }
+  }
 
+  tags = ["isajjim-backend"]
 
-# Cloud Run을 외부에서 접근 가능하게 설정
-resource "google_cloud_run_v2_service_iam_member" "public" {
-  name     = google_cloud_run_v2_service.backend.name
-  location = var.region
-  role     = "roles/run.invoker"
-  member   = "allUsers"
+  service_account {
+    email  = google_service_account.backend.email
+    scopes = ["cloud-platform"]
+  }
+
+  # VM 최초 부팅 시 자동 설치 
+  metadata = {
+    startup-script = <<-EOF
+      #!/bin/bash
+      set -e
+
+      apt-get update -y
+
+      # Docker 설치
+      apt-get install -y docker.io
+      systemctl enable docker
+      systemctl start docker
+      usermod -aG docker ubuntu
+
+      # Docker Compose 설치
+      curl -SL https://github.com/docker/compose/releases/download/v2.24.0/docker-compose-linux-x86_64 \
+        -o /usr/local/bin/docker-compose
+      chmod +x /usr/local/bin/docker-compose
+
+      # Nginx, Certbot 설치
+      apt-get install -y nginx
+      apt-get install -y certbot python3-certbot-nginx
+
+      echo "Startup script completed" >> /var/log/startup-script.log
+    EOF
+  }
 }
