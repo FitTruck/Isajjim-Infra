@@ -3,9 +3,9 @@ output "backend_external_ip" {
   value       = google_compute_address.backend_ip.address
 }
 
-output "db_public_ip" {
-  description = "Cloud SQL 공개 IP"
-  value       = google_sql_database_instance.main.public_ip_address
+output "db_private_ip" {
+  description = "Cloud SQL 프라이빗 IP (VM 내부망 접근용)"
+  value       = google_sql_database_instance.main.private_ip_address
 }
 
 output "db_connection_name" {
