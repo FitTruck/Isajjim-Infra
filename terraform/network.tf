@@ -26,7 +26,7 @@ resource "google_service_networking_connection" "private_vpc_connection" {
 resource "google_compute_firewall" "allow_ssh" {
   name          = "isajjim-allow-ssh"
   network       = "default"
-  source_ranges = ["0.0.0.0/0"]
+  source_ranges = ["35.235.240.0/20"] #GCP IAP 전용 IP
   target_tags   = ["isajjim-backend"]
 
   allow {

@@ -55,6 +55,19 @@ resource "google_project_iam_member" "cloudbuild_registry" {
 
 resource "google_project_iam_member" "cloudbuild_compute" {
   project = var.project_id
-  role    = "roles/compute.osLogin"
+  role    = "roles/compute.osAdminLogin"
+  member  = "serviceAccount:675009148577@cloudbuild.gserviceaccount.com"
+}
+
+
+resource "google_project_iam_member" "cloudbuild_viewer" {
+  project = var.project_id
+  role    = "roles/compute.viewer"
+  member  = "serviceAccount:675009148577@cloudbuild.gserviceaccount.com"
+}
+
+resource "google_project_iam_member" "cloudbuild_iap" {
+  project = var.project_id
+  role    = "roles/iap.tunnelResourceAccessor"
   member  = "serviceAccount:675009148577@cloudbuild.gserviceaccount.com"
 }

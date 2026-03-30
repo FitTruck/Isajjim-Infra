@@ -19,7 +19,7 @@ resource "google_storage_bucket" "images" {
   }
 
   cors {
-    origin          = ["https://isajjim.kro.kr", "https://isajjim.web.app", "https://isajjim.firebaseapp.com"]
+    origin          = ["https://isajjim.kro.kr", "https://api.isajjim.kro.kr"]
     method          = ["GET", "PUT", "POST"]
     response_header = ["Content-Type"]
     max_age_seconds = 3600
