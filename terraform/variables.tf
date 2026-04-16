@@ -32,3 +32,15 @@ variable "gemini_api_key" {
   sensitive   = true
 }
 
+variable "frontend_url" {
+  description = "프론트엔드 URL (CORS 및 백엔드 환경변수에 사용)"
+  type        = string
+  default     = "https://isajjim.kro.kr"
+}
+
+variable "api_domain" {
+  description = "백엔드 API 도메인 (Swagger, OAuth redirect 등에 사용)"
+  type        = string
+  default     = "api.isajjim.kro.kr"
+}
+

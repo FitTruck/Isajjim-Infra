@@ -1,11 +1,10 @@
+# ---- DB / AI ----
 resource "google_secret_manager_secret" "db_password" {
-  secret_id = "db-password"
-  
+  secret_id  = "db-password"
+  depends_on = [google_project_service.secretmanager]
   replication {
     auto {}
   }
-  
-  depends_on = [google_project_service.secretmanager]
 }
 
 resource "google_secret_manager_secret_version" "db_password_version" {
@@ -14,16 +13,96 @@ resource "google_secret_manager_secret_version" "db_password_version" {
 }
 
 resource "google_secret_manager_secret" "gemini_api_key" {
-  secret_id = "gemini-api-key"
-  
+  secret_id  = "gemini-api-key"
+  depends_on = [google_project_service.secretmanager]
   replication {
     auto {}
   }
-  
-  depends_on = [google_project_service.secretmanager]
 }
 
 resource "google_secret_manager_secret_version" "gemini_api_key_version" {
   secret      = google_secret_manager_secret.gemini_api_key.id
   secret_data = var.gemini_api_key
+}
+
+# ---- JWT / 암호화 ----
+resource "google_secret_manager_secret" "jwt_secret" {
+  secret_id  = "jwt-secret"
+  depends_on = [google_project_service.secretmanager]
+  replication {
+    auto {}
+  }
+}
+
+resource "google_secret_manager_secret" "app_encryption_key" {
+  secret_id  = "app-encryption-key"
+  depends_on = [google_project_service.secretmanager]
+  replication {
+    auto {}
+  }
+}
+
+resource "google_secret_manager_secret" "auth_token" {
+  secret_id  = "auth-token"
+  depends_on = [google_project_service.secretmanager]
+  replication {
+    auto {}
+  }
+}
+
+# ---- 소셜 로그인 ----
+resource "google_secret_manager_secret" "kakao_client_id" {
+  secret_id  = "kakao-client-id"
+  depends_on = [google_project_service.secretmanager]
+  replication {
+    auto {}
+  }
+}
+
+resource "google_secret_manager_secret" "kakao_client_secret" {
+  secret_id  = "kakao-client-secret"
+  depends_on = [google_project_service.secretmanager]
+  replication {
+    auto {}
+  }
+}
+
+resource "google_secret_manager_secret" "kakao_admin_key" {
+  secret_id  = "kakao-admin-key"
+  depends_on = [google_project_service.secretmanager]
+  replication {
+    auto {}
+  }
+}
+
+resource "google_secret_manager_secret" "google_client_id" {
+  secret_id  = "google-client-id"
+  depends_on = [google_project_service.secretmanager]
+  replication {
+    auto {}
+  }
+}
+
+resource "google_secret_manager_secret" "google_client_secret" {
+  secret_id  = "google-client-secret"
+  depends_on = [google_project_service.secretmanager]
+  replication {
+    auto {}
+  }
+}
+
+resource "google_secret_manager_secret" "naver_client_id" {
+  secret_id  = "naver-client-id"
+  depends_on = [google_project_service.secretmanager]
+  replication {
+    auto {}
+  }
+}
+
+resource "google_secret_manager_secret" "naver_client_secret" {
+  secret_id  = "naver-client-secret"
+  depends_on = [google_project_service.secretmanager]
+  replication {
+    auto {}
+  }
 }

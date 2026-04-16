@@ -47,3 +47,17 @@ resource "google_compute_firewall" "allow_http_https" {
     ports    = ["80", "443"]
   }
 }
+
+#모니터링 포트 개방 (Prometheus: 9090, Grafana: 3000)
+resource "google_compute_firewall" "allow_monitoring" {
+  name          = "isajjim-allow-monitoring"
+  network       = "default"
+  source_ranges = ["0.0.0.0/0"]
+  target_tags   = ["isajjim-backend"]
+
+  allow {
+    protocol = "tcp"
+    ports    = ["9090", "3000"]
+  }
+}
+

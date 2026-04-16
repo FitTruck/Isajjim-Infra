@@ -2,7 +2,7 @@ resource "google_cloudbuild_trigger" "backend_push_trigger" {
   name     = "backend-trigger"
   location = var.region 
 
-  service_account = "projects/${var.project_id}/serviceAccounts/675009148577-compute@developer.gserviceaccount.com"
+  service_account = google_service_account.cloudbuild.id
 
   substitutions = {
     _REGION        = var.region
@@ -10,8 +10,12 @@ resource "google_cloudbuild_trigger" "backend_push_trigger" {
     _REPO_NAME     = google_artifact_registry_repository.main.repository_id
     _IMAGE_NAME    = "backend"
     _INSTANCE_NAME = google_compute_instance.backend.name
-    _ENV_FILE      = "/home/ubuntu/configs/.env"
     _PORT          = "8080"
+    _DB_PRIVATE_IP = google_sql_database_instance.main.private_ip_address
+    _BACKEND_IP    = google_compute_address.backend_ip.address
+    _IMAGES_BUCKET = google_storage_bucket.images.name
+    _FRONTEND_URL  = var.frontend_url
+    _API_DOMAIN    = var.api_domain
   }
 
   repository_event_config {
