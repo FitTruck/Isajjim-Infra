@@ -22,16 +22,20 @@ fi
 echo "[$(date)] Secret Manager에서 시크릿 로드 중..."
 DB_PASSWORD=$(gcloud secrets versions access latest --secret="db-password" --project="${project_id}")
 GEMINI_API_KEY=$(gcloud secrets versions access latest --secret="gemini-api-key" --project="${project_id}")
-JWT_SECRET=$(gcloud secrets versions access latest --secret="jwt-secret" --project="${project_id}" 2>/dev/null || echo "PLACEHOLDER")
-APP_ENCRYPTION_KEY=$(gcloud secrets versions access latest --secret="app-encryption-key" --project="${project_id}" 2>/dev/null || echo "PLACEHOLDER")
-AUTH_TOKEN=$(gcloud secrets versions access latest --secret="auth-token" --project="${project_id}" 2>/dev/null || echo "PLACEHOLDER")
-KAKAO_CLIENT_ID=$(gcloud secrets versions access latest --secret="kakao-client-id" --project="${project_id}" 2>/dev/null || echo "PLACEHOLDER")
-KAKAO_CLIENT_SECRET=$(gcloud secrets versions access latest --secret="kakao-client-secret" --project="${project_id}" 2>/dev/null || echo "PLACEHOLDER")
-KAKAO_ADMIN_KEY=$(gcloud secrets versions access latest --secret="kakao-admin-key" --project="${project_id}" 2>/dev/null || echo "PLACEHOLDER")
-GOOGLE_CLIENT_ID=$(gcloud secrets versions access latest --secret="google-client-id" --project="${project_id}" 2>/dev/null || echo "PLACEHOLDER")
-GOOGLE_CLIENT_SECRET=$(gcloud secrets versions access latest --secret="google-client-secret" --project="${project_id}" 2>/dev/null || echo "PLACEHOLDER")
-NAVER_CLIENT_ID=$(gcloud secrets versions access latest --secret="naver-client-id" --project="${project_id}" 2>/dev/null || echo "PLACEHOLDER")
-NAVER_CLIENT_SECRET=$(gcloud secrets versions access latest --secret="naver-client-secret" --project="${project_id}" 2>/dev/null || echo "PLACEHOLDER")
+JWT_SECRET=$(gcloud secrets versions access latest --secret="jwt-secret" --project="${project_id}" 2>/dev/null || echo "dev-jwt-secret-change-before-prod")
+APP_ENCRYPTION_KEY=$(gcloud secrets versions access latest --secret="app-encryption-key" --project="${project_id}" 2>/dev/null || echo "dev-app-encryption-key-change-before-prod")
+AUTH_TOKEN=$(gcloud secrets versions access latest --secret="auth-token" --project="${project_id}" 2>/dev/null || echo "dev-auth-token-change-before-prod")
+KAKAO_CLIENT_ID=$(gcloud secrets versions access latest --secret="kakao-client-id" --project="${project_id}" 2>/dev/null || echo "dev-kakao-client-id")
+KAKAO_CLIENT_SECRET=$(gcloud secrets versions access latest --secret="kakao-client-secret" --project="${project_id}" 2>/dev/null || echo "dev-kakao-client-secret")
+KAKAO_ADMIN_KEY=$(gcloud secrets versions access latest --secret="kakao-admin-key" --project="${project_id}" 2>/dev/null || echo "dev-kakao-admin-key")
+GOOGLE_CLIENT_ID=$(gcloud secrets versions access latest --secret="google-client-id" --project="${project_id}" 2>/dev/null || echo "dev-google-client-id")
+GOOGLE_CLIENT_SECRET=$(gcloud secrets versions access latest --secret="google-client-secret" --project="${project_id}" 2>/dev/null || echo "dev-google-client-secret")
+NAVER_CLIENT_ID=$(gcloud secrets versions access latest --secret="naver-client-id" --project="${project_id}" 2>/dev/null || echo "dev-naver-client-id")
+NAVER_CLIENT_SECRET=$(gcloud secrets versions access latest --secret="naver-client-secret" --project="${project_id}" 2>/dev/null || echo "dev-naver-client-secret")
+
+JWT_ACCESS_TOKEN_EXPIRATION_TIME="604800000"
+JWT_REFRESH_TOKEN_EXPIRATION_TIME="604800000"
+JWT_REFRESH_TOKEN_REISSUE_LIMIT_DAYS="14"
 
 # ---- Docker 인증 및 최신 이미지 pull ----
 echo "[$(date)] Docker 이미지 pull 중..."
@@ -77,9 +81,9 @@ docker run -d \
   -e LOCAL_URL=http://localhost:3000 \
   -e LOCAL_SECURE_URL=https://localhost:3000 \
   -e JWT_SECRET="$JWT_SECRET" \
-  -e JWT_ACCESS_TOKEN_EXPIRATION_TIME=604800000 \
-  -e JWT_REFRESH_TOKEN_EXPIRATION_TIME=604800000 \
-  -e JWT_REFRESH_TOKEN_REISSUE_LIMIT_DAYS=14 \
+  -e JWT_ACCESS_TOKEN_EXPIRATION_TIME="$JWT_ACCESS_TOKEN_EXPIRATION_TIME" \
+  -e JWT_REFRESH_TOKEN_EXPIRATION_TIME="$JWT_REFRESH_TOKEN_EXPIRATION_TIME" \
+  -e JWT_REFRESH_TOKEN_REISSUE_LIMIT_DAYS="$JWT_REFRESH_TOKEN_REISSUE_LIMIT_DAYS" \
   -e APP_ENCRYPTION_KEY="$APP_ENCRYPTION_KEY" \
   -e AUTH_TOKEN="$AUTH_TOKEN" \
   -e KAKAO_CLIENT_ID="$KAKAO_CLIENT_ID" \

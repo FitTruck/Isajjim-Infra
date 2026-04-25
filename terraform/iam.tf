@@ -75,3 +75,9 @@ resource "google_service_account_iam_member" "cloudbuild_agent_token_creator" {
   role               = "roles/iam.serviceAccountTokenCreator"
   member             = "serviceAccount:service-${data.google_project.current.number}@gcp-sa-cloudbuild.iam.gserviceaccount.com"
 }
+
+resource "google_service_account_iam_member" "cloudbuild_backend_sa_user" {
+  service_account_id = google_service_account.backend.name
+  role               = "roles/iam.serviceAccountUser"
+  member             = "serviceAccount:${google_service_account.cloudbuild.email}"
+}
