@@ -23,7 +23,7 @@ echo "[$(date)] Secret Manager에서 시크릿 로드 중..."
 DB_PASSWORD=$(gcloud secrets versions access latest --secret="db-password" --project="${project_id}")
 GEMINI_API_KEY=$(gcloud secrets versions access latest --secret="gemini-api-key" --project="${project_id}")
 JWT_SECRET=$(gcloud secrets versions access latest --secret="jwt-secret" --project="${project_id}" 2>/dev/null || echo "dev-jwt-secret-change-before-prod")
-APP_ENCRYPTION_KEY=$(gcloud secrets versions access latest --secret="app-encryption-key" --project="${project_id}" 2>/dev/null || echo "dev-app-encryption-key-change-before-prod")
+APP_ENCRYPTION_KEY=$(gcloud secrets versions access latest --secret="app-encryption-key" --project="${project_id}" 2>/dev/null || echo "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=")
 AUTH_TOKEN=$(gcloud secrets versions access latest --secret="auth-token" --project="${project_id}" 2>/dev/null || echo "dev-auth-token-change-before-prod")
 KAKAO_CLIENT_ID=$(gcloud secrets versions access latest --secret="kakao-client-id" --project="${project_id}" 2>/dev/null || echo "dev-kakao-client-id")
 KAKAO_CLIENT_SECRET=$(gcloud secrets versions access latest --secret="kakao-client-secret" --project="${project_id}" 2>/dev/null || echo "dev-kakao-client-secret")
