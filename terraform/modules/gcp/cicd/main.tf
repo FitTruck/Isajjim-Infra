@@ -17,7 +17,6 @@ resource "google_cloudbuild_trigger" "backend_push_trigger" {
     _IMAGE_NAME                           = "backend"
     _INSTANCE_NAME                        = var.backend_instance_name
     _PORT                                 = "8080"
-    _DB_PRIVATE_IP                        = var.db_private_ip
     _BACKEND_IP                           = var.backend_ip_address
     _IMAGES_BUCKET                        = var.images_bucket_name
     _FRONTEND_URL                         = var.frontend_url

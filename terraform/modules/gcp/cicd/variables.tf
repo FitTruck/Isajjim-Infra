@@ -28,11 +28,6 @@ variable "backend_ip_address" {
   type        = string
 }
 
-variable "db_private_ip" {
-  description = "Cloud SQL 프라이빗 IP (database 모듈 output)"
-  type        = string
-}
-
 variable "images_bucket_name" {
   description = "이미지 버킷 이름 (storage 모듈 output)"
   type        = string

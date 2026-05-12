@@ -13,11 +13,6 @@ variable "region" {
   type        = string
 }
 
-variable "db_private_ip" {
-  description = "Cloud SQL 프라이빗 IP (startup script 주입용)"
-  type        = string
-}
-
 variable "backend_ip" {
   description = "백엔드 VM 외부 고정 IP (startup script 주입용)"
   type        = string

@@ -3,11 +3,6 @@ resource "google_project_service" "compute" {
   disable_on_destroy = false
 }
 
-resource "google_project_service" "servicenetworking" {
-  service            = "servicenetworking.googleapis.com"
-  disable_on_destroy = false
-}
-
 resource "google_project_service" "iap" {
   service            = "iap.googleapis.com"
   disable_on_destroy = false
@@ -17,22 +12,6 @@ resource "google_compute_address" "backend_ip" {
   name       = "${var.project_name}-backend-ip"
   region     = var.region
   depends_on = [google_project_service.compute]
-}
-
-resource "google_compute_global_address" "private_ip_address" {
-  name          = "${var.project_name}-private-ip"
-  purpose       = "VPC_PEERING"
-  address_type  = "INTERNAL"
-  prefix_length = 16
-  network       = "projects/${var.project_id}/global/networks/default"
-  depends_on    = [google_project_service.compute]
-}
-
-resource "google_service_networking_connection" "private_vpc_connection" {
-  network                 = "projects/${var.project_id}/global/networks/default"
-  service                 = "servicenetworking.googleapis.com"
-  reserved_peering_ranges = [google_compute_global_address.private_ip_address.name]
-  depends_on              = [google_project_service.servicenetworking]
 }
 
 resource "google_compute_firewall" "allow_ssh" {

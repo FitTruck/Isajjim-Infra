@@ -63,7 +63,7 @@ echo "[$(date)] 컨테이너 실행 중..."
 docker run -d \
   --name isajjim-backend \
   -e SPRING_PROFILES_ACTIVE=dev \
-  -e "DB_URL=jdbc:mysql://${db_private_ip}:3306/isajjim" \
+  -e "DB_URL=jdbc:mysql://localhost:3306/isajjim" \
   -e DB_USERNAME=isajjim-user \
   -e DB_PASSWORD="$DB_PASSWORD" \
   -e GEMINI_API_KEY="$GEMINI_API_KEY" \

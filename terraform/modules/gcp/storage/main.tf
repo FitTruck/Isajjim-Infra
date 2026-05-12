@@ -35,7 +35,6 @@ resource "google_storage_bucket_object" "startup_script" {
     project_id    = var.project_id
     project_name  = var.project_name
     region        = var.region
-    db_private_ip = var.db_private_ip
     backend_ip    = var.backend_ip
     images_bucket = google_storage_bucket.images.name
     frontend_url  = var.frontend_url

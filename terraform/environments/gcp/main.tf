@@ -17,22 +17,11 @@ module "secrets" {
   gemini_api_key = var.gemini_api_key
 }
 
-module "database" {
-  source      = "../../modules/gcp/database"
-  project_id  = var.project_id
-  region      = var.region
-  db_password = var.db_password
-
-  # networking 모듈이 VPC Peering을 완료한 후 SQL 인스턴스가 생성되어야 함
-  depends_on = [module.networking]
-}
-
 module "storage" {
   source        = "../../modules/gcp/storage"
   project_id    = var.project_id
   project_name  = var.project_name
   region        = var.region
-  db_private_ip = module.database.private_ip_address
   backend_ip    = module.networking.backend_ip_address
   frontend_url  = var.frontend_url
   api_domain    = var.api_domain
@@ -59,7 +48,6 @@ module "cicd" {
   artifact_registry_repo_id = module.storage.artifact_registry_repo_id
   backend_instance_name     = module.compute.instance_name
   backend_ip_address        = module.networking.backend_ip_address
-  db_private_ip             = module.database.private_ip_address
   images_bucket_name        = module.storage.images_bucket_name
   frontend_url              = var.frontend_url
   api_domain                = var.api_domain

@@ -3,16 +3,6 @@ output "backend_external_ip" {
   value       = module.networking.backend_ip_address
 }
 
-output "db_private_ip" {
-  description = "Cloud SQL 프라이빗 IP (VM 내부망 접근용)"
-  value       = module.database.private_ip_address
-}
-
-output "db_connection_name" {
-  description = "Cloud SQL 연결 이름"
-  value       = module.database.connection_name
-}
-
 output "images_bucket_name" {
   description = "이미지 업로드 버킷 이름"
   value       = module.storage.images_bucket_name
