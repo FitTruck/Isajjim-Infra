@@ -42,9 +42,31 @@ echo "[$(date)] Docker 이미지 pull 중..."
 gcloud auth configure-docker ${region}-docker.pkg.dev --quiet
 docker pull ${region}-docker.pkg.dev/${project_id}/${project_name}-repo/backend:latest
 
+# ---- MySQL 설치 및 설정 (없을 경우에만) ----
+if ! command -v mysql &>/dev/null; then
+  echo "[$(date)] Install MySQL..."
+  export DEBIAN_FRONTEND=noninteractive
+  apt-get install -y mysql-server
+  
+  systemctl start mysql
+  systemctl enable mysql
+
+  echo "[$(date)] MySQL Setup..."
+  mysql -e "CREATE DATABASE IF NOT EXISTS isajjim CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+  # 비밀번호에 특수문자가 있을 수 있으므로 따옴표 처리
+  mysql -e "CREATE USER IF NOT EXISTS 'isajjim-user'@'%' IDENTIFIED BY '$${DB_PASSWORD}';"
+  mysql -e "GRANT ALL PRIVILEGES ON isajjim.* TO 'isajjim-user'@'%';"
+  mysql -e "FLUSH PRIVILEGES;"
+  
+  # 만약 localhost가 아닌 다른 컨테이너(host 모드가 아닐 때)에서 접속하려면 bind-address 변경이 필요할 수 있습니다.
+  # 현재 backend 컨테이너가 --network host로 띄워진다면 127.0.0.1로도 접속 가능합니다.
+  sed -i 's/bind-address\s*=\s*127.0.0.1/bind-address = 0.0.0.0/' /etc/mysql/mysql.conf.d/mysqld.cnf || true
+  systemctl restart mysql
+fi
+
 # ---- Redis 컨테이너 실행 (없을 경우에만) ----
 if ! docker ps --filter "name=redis" --filter "status=running" | grep -q redis; then
-  echo "[$(date)] Redis 컨테이너 시작 중..."
+  echo "[$(date)] Redis Starting..."
   docker stop redis 2>/dev/null || true
   docker rm redis 2>/dev/null || true
   docker run -d \
@@ -59,7 +81,7 @@ docker stop isajjim-backend 2>/dev/null || true
 docker rm isajjim-backend 2>/dev/null || true
 
 # ---- 컨테이너 실행 ----
-echo "[$(date)] 컨테이너 실행 중..."
+echo "[$(date)] Container Starting..."
 docker run -d \
   --name isajjim-backend \
   -e SPRING_PROFILES_ACTIVE=dev \
