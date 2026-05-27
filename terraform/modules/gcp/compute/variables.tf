@@ -9,27 +9,28 @@ variable "project_name" {
 }
 
 variable "machine_type" {
-  description = "Compute Engine 머신 타입"
+  description = "AI 서버 Compute Engine 머신 타입"
   type        = string
-  default     = "e2-medium"
+  default     = "g2-standard-4"
 }
 
-variable "backend_ip_address" {
-  description = "백엔드 고정 외부 IP (networking 모듈 output)"
-  type        = string
+variable "disk_size_gb" {
+  description = "AI 서버 부트 디스크 크기(GB)"
+  type        = number
+  default     = 100
 }
 
-variable "backend_sa_email" {
-  description = "백엔드 서비스 계정 이메일 (iam 모듈 output)"
-  type        = string
-}
-
-variable "scripts_bucket_name" {
-  description = "startup script가 저장된 GCS 버킷 이름 (storage 모듈 output)"
+variable "ai_ip_address" {
+  description = "AI 서버 고정 외부 IP (networking 모듈 output)"
   type        = string
 }
 
-variable "startup_script_object_name" {
-  description = "GCS 버킷 내 startup script 오브젝트 이름 (storage 모듈 output)"
+variable "ai_subnet" {
+  description = "AI 서버 subnet self link (networking 모듈 output)"
+  type        = string
+}
+
+variable "ai_sa_email" {
+  description = "AI 서버 서비스 계정 이메일 (iam 모듈 output)"
   type        = string
 }

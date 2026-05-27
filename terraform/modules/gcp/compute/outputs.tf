@@ -1,9 +1,9 @@
 output "instance_name" {
-  description = "Compute Engine 인스턴스 이름"
-  value       = google_compute_instance.backend.name
+  description = "AI 서버 Compute Engine 인스턴스 이름"
+  value       = google_compute_instance.ai.name
 }
 
 output "instance_id" {
-  description = "Compute Engine 인스턴스 ID"
-  value       = google_compute_instance.backend.id
+  description = "AI 서버 Compute Engine 인스턴스 ID"
+  value       = google_compute_instance.ai.id
 }

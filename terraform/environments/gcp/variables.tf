@@ -20,44 +20,32 @@ variable "zone" {
   default     = "asia-northeast3-a"
 }
 
-variable "db_password" {
-  description = "Cloud SQL 사용자 비밀번호"
+variable "ai_machine_type" {
+  description = "AI 서버 Compute Engine 머신 타입"
   type        = string
-  sensitive   = true
+  default     = "g2-standard-4"
 }
 
-variable "gemini_api_key" {
-  description = "Gemini API 키"
-  type        = string
-  sensitive   = true
+variable "ai_disk_size_gb" {
+  description = "AI 서버 부트 디스크 크기(GB)"
+  type        = number
+  default     = 100
 }
 
-variable "frontend_url" {
-  description = "프론트엔드 URL (CORS 및 환경변수에 사용)"
+variable "ai_subnet_cidr" {
+  description = "AI 서버 전용 subnet CIDR"
   type        = string
-  default     = "https://isajjim.kro.kr"
+  default     = "10.10.0.0/24"
 }
 
-variable "api_domain" {
-  description = "백엔드 API 도메인"
+variable "ai_service_port" {
+  description = "AI 서버 API 포트"
   type        = string
-  default     = "api.isajjim.kro.kr"
+  default     = "8000"
 }
 
-variable "github_connection_name" {
-  description = "Cloud Build GitHub 연결 이름"
-  type        = string
-  default     = "Backend"
-}
-
-variable "github_repo_name" {
-  description = "Cloud Build에 연결된 GitHub 저장소 이름"
-  type        = string
-  default     = "FitTruck-Isajjim-Backend"
-}
-
-variable "trigger_branch" {
-  description = "Cloud Build 트리거 브랜치 패턴 (정규식)"
-  type        = string
-  default     = "^dev$"
+variable "ai_allowed_source_ranges" {
+  description = "AI 서버 API 포트 접근 허용 CIDR 목록"
+  type        = list(string)
+  default     = ["0.0.0.0/0"]
 }

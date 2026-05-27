@@ -8,17 +8,30 @@ resource "google_project_service" "iap" {
   disable_on_destroy = false
 }
 
-resource "google_compute_address" "backend_ip" {
-  name       = "${var.project_name}-backend-ip"
+resource "google_compute_network" "ai" {
+  name                    = "${var.project_name}-ai-vpc"
+  auto_create_subnetworks = false
+  depends_on              = [google_project_service.compute]
+}
+
+resource "google_compute_subnetwork" "ai" {
+  name          = "${var.project_name}-ai-subnet"
+  ip_cidr_range = var.ai_subnet_cidr
+  region        = var.region
+  network       = google_compute_network.ai.id
+}
+
+resource "google_compute_address" "ai_ip" {
+  name       = "${var.project_name}-ai-ip"
   region     = var.region
   depends_on = [google_project_service.compute]
 }
 
 resource "google_compute_firewall" "allow_ssh" {
   name          = "${var.project_name}-allow-ssh"
-  network       = "default"
+  network       = google_compute_network.ai.name
   source_ranges = ["35.235.240.0/20"]
-  target_tags   = ["${var.project_name}-backend"]
+  target_tags   = ["${var.project_name}-ai"]
   depends_on    = [google_project_service.compute]
 
   allow {
@@ -27,28 +40,15 @@ resource "google_compute_firewall" "allow_ssh" {
   }
 }
 
-resource "google_compute_firewall" "allow_http_https" {
-  name          = "${var.project_name}-allow-http-https"
-  network       = "default"
-  source_ranges = ["0.0.0.0/0"]
-  target_tags   = ["${var.project_name}-backend"]
+resource "google_compute_firewall" "allow_ai_service" {
+  name          = "${var.project_name}-allow-ai-service"
+  network       = google_compute_network.ai.name
+  source_ranges = var.ai_allowed_source_ranges
+  target_tags   = ["${var.project_name}-ai"]
   depends_on    = [google_project_service.compute]
 
   allow {
     protocol = "tcp"
-    ports    = ["80", "443"]
-  }
-}
-
-resource "google_compute_firewall" "allow_monitoring" {
-  name          = "${var.project_name}-allow-monitoring"
-  network       = "default"
-  source_ranges = ["0.0.0.0/0"]
-  target_tags   = ["${var.project_name}-backend"]
-  depends_on    = [google_project_service.compute]
-
-  allow {
-    protocol = "tcp"
-    ports    = ["9090", "3000"]
+    ports    = [var.ai_service_port]
   }
 }
