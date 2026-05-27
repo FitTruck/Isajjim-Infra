@@ -49,3 +49,21 @@ variable "ai_allowed_source_ranges" {
   type        = list(string)
   default     = ["0.0.0.0/0"]
 }
+
+variable "artifact_registry_repo_id" {
+  description = "AI 서버 Docker 이미지용 Artifact Registry repository ID"
+  type        = string
+  default     = "isajjim-ai"
+}
+
+variable "github_repository" {
+  description = "GitHub Actions OIDC를 허용할 repository (owner/repo)"
+  type        = string
+  default     = "FitTruck/boxer-Isajjim"
+}
+
+variable "github_branch" {
+  description = "GitHub Actions OIDC를 허용할 branch 이름"
+  type        = string
+  default     = "infra-dev"
+}

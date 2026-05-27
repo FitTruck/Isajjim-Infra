@@ -44,11 +44,46 @@ resource "google_compute_instance" "ai" {
       echo "[$(date)] AI server startup script started"
 
       apt-get update -y
-      apt-get install -y docker.io
+      apt-get install -y \
+        ca-certificates \
+        curl \
+        docker.io \
+        gnupg \
+        linux-headers-$(uname -r) \
+        python3
 
       systemctl enable docker
       systemctl start docker
       usermod -aG docker ubuntu || true
+
+      if ! nvidia-smi >/dev/null 2>&1; then
+        echo "[$(date)] Installing NVIDIA GPU driver from Ubuntu packages..."
+        apt-get install -y \
+          linux-modules-nvidia-595-gcp \
+          nvidia-driver-595 \
+          nvidia-utils-595
+        modprobe nvidia
+      else
+        echo "[$(date)] NVIDIA GPU driver already installed"
+      fi
+
+      if ! command -v nvidia-ctk >/dev/null 2>&1; then
+        echo "[$(date)] Installing NVIDIA Container Toolkit..."
+        curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey \
+          | gpg --dearmor --yes -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
+
+        curl -fsSL https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list \
+          | sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' \
+          > /etc/apt/sources.list.d/nvidia-container-toolkit.list
+
+        apt-get update -y
+        apt-get install -y nvidia-container-toolkit
+      else
+        echo "[$(date)] NVIDIA Container Toolkit already installed"
+      fi
+
+      nvidia-ctk runtime configure --runtime=docker
+      systemctl restart docker
 
       echo "[$(date)] AI server startup script completed"
     EOT
