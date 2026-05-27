@@ -36,6 +36,8 @@ resource "google_compute_instance" "ai" {
   }
 
   metadata = {
+    enable-oslogin = "TRUE"
+
     startup-script = <<-EOT
       #!/bin/bash
       set -euo pipefail

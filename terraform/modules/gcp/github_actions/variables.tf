@@ -17,3 +17,8 @@ variable "github_branch" {
   description = "GitHub branch allowed to impersonate the service account"
   type        = string
 }
+
+variable "ai_sa_email" {
+  description = "AI 서버 서비스 계정 이메일"
+  type        = string
+}

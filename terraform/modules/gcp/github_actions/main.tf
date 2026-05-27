@@ -41,6 +41,12 @@ resource "google_project_iam_member" "os_admin_login" {
   member  = "serviceAccount:${google_service_account.github_actions.email}"
 }
 
+resource "google_service_account_iam_member" "ai_service_account_user" {
+  service_account_id = "projects/${var.project_id}/serviceAccounts/${var.ai_sa_email}"
+  role               = "roles/iam.serviceAccountUser"
+  member             = "serviceAccount:${google_service_account.github_actions.email}"
+}
+
 resource "google_iam_workload_identity_pool" "github" {
   workload_identity_pool_id = "${var.project_name}-github-pool"
   display_name              = "${var.project_name} GitHub Actions"
