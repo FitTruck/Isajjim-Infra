@@ -65,5 +65,5 @@ variable "github_repository" {
 variable "github_branch" {
   description = "GitHub Actions OIDC를 허용할 branch 이름"
   type        = string
-  default     = "infra-dev"
+  default     = "main"
 }
