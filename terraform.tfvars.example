@@ -8,5 +8,5 @@ ai_machine_type = "g2-standard-4"
 ai_disk_size_gb = 100
 ai_subnet_cidr  = "10.10.0.0/24"
 
-# AWS 백엔드 서버의 고정 egress IP로 좁히는 것을 권장
+# 운영 전에는 백엔드 서버의 고정 egress IP로 좁히는 것을 권장
 ai_allowed_source_ranges = ["0.0.0.0/0"]

@@ -2,7 +2,7 @@
 
 Isajjim AI 서버를 위한 GCP 인프라 Terraform 코드입니다.
 
-현재 인프라는 GCP에 AI 전용 VM, VPC, 방화벽, Secret Manager, Artifact Registry, GitHub Actions Workload Identity Federation을 구성합니다. 백엔드 서버와 스토리지는 AWS 쪽에서 별도로 운영되므로 이 저장소에서는 관리하지 않습니다.
+현재 인프라는 GCP에 AI 전용 VM, VPC, 방화벽, Secret Manager, Artifact Registry, GitHub Actions Workload Identity Federation을 구성합니다. 백엔드 서버와 스토리지는 사양 확정 후 별도로 구성합니다.
 
 ## 아키텍처
 
@@ -13,7 +13,7 @@ GitHub Actions
   -> IAP SSH deploy
   -> GCE AI VM
 
-AWS Backend
+Backend
   -> HTTP request to AI VM :8000
 
 GCE AI VM
@@ -205,4 +205,3 @@ sudo ss -ltnp 'sport = :8000'
 - secret 값은 의도적으로 Terraform 밖에서 관리합니다.
 - AI API 방화벽은 개발 편의를 위해 기본값이 전체 CIDR 허용입니다. 운영 전에는 접근 대역을 제한해야 합니다.
 - VM 부트 디스크는 `auto_delete = true`로 구성되어 있습니다. VM을 삭제하면 부트 디스크도 함께 삭제됩니다.
-- 이 Terraform 환경을 destroy하면 여기서 관리하는 GCP 리소스가 삭제됩니다. AWS 백엔드와 S3 스토리지는 이 저장소에서 관리하지 않으므로 영향을 받지 않습니다.
