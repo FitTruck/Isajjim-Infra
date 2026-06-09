@@ -35,16 +35,17 @@ resource "google_project_iam_member" "iap_tunnel_accessor" {
   member  = "serviceAccount:${google_service_account.github_actions.email}"
 }
 
-resource "google_project_iam_member" "os_admin_login" {
-  project = var.project_id
-  role    = "roles/compute.osAdminLogin"
-  member  = "serviceAccount:${google_service_account.github_actions.email}"
+resource "google_project_iam_custom_role" "instance_metadata_ssh" {
+  role_id     = "${replace(var.project_name, "-", "_")}_github_actions_instance_metadata_ssh"
+  title       = "${var.project_name} GitHub Actions Instance Metadata SSH"
+  description = "Allows GitHub Actions to register ephemeral SSH keys on Compute Engine instances."
+  permissions = ["compute.instances.setMetadata"]
 }
 
-resource "google_service_account_iam_member" "ai_service_account_user" {
-  service_account_id = "projects/${var.project_id}/serviceAccounts/${var.ai_sa_email}"
-  role               = "roles/iam.serviceAccountUser"
-  member             = "serviceAccount:${google_service_account.github_actions.email}"
+resource "google_project_iam_member" "instance_metadata_ssh" {
+  project = var.project_id
+  role    = google_project_iam_custom_role.instance_metadata_ssh.name
+  member  = "serviceAccount:${google_service_account.github_actions.email}"
 }
 
 resource "google_iam_workload_identity_pool" "github" {

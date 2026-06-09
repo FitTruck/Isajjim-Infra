@@ -168,7 +168,9 @@ gcloud compute ssh isajjim-ai \
   --tunnel-through-iap
 ```
 
-VM에는 OS Login이 활성화되어 있습니다. 접속 사용자는 Compute OS Login 또는 Compute OS Admin Login 같은 적절한 IAM 권한이 필요합니다.
+VM은 조직 외부 사용자도 콘솔 SSH를 사용할 수 있도록 OS Login을 비활성화하고
+메타데이터 기반 SSH 키를 사용합니다. 콘솔과 `gcloud compute ssh`가 추가하는
+`ssh-keys` 메타데이터는 Terraform이 삭제하지 않도록 변경 감지에서 제외합니다.
 
 ## 운영 확인
 

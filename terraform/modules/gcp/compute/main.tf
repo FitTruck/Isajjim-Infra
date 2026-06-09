@@ -36,7 +36,7 @@ resource "google_compute_instance" "ai" {
   }
 
   metadata = {
-    enable-oslogin = "TRUE"
+    enable-oslogin = "FALSE"
 
     startup-script = <<-EOT
       #!/bin/bash
@@ -89,5 +89,9 @@ resource "google_compute_instance" "ai" {
 
       echo "[$(date)] AI server startup script completed"
     EOT
+  }
+
+  lifecycle {
+    ignore_changes = [metadata["ssh-keys"]]
   }
 }
