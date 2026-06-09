@@ -37,6 +37,7 @@ module "github_actions" {
   project_name      = var.project_name
   github_repository = var.github_repository
   github_branch     = var.github_branch
+  ai_sa_email       = module.iam.ai_sa_email
 }
 
 module "compute" {
